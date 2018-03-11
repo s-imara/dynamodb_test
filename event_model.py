@@ -1,4 +1,4 @@
-from pynamodb.attributes import ListAttribute, MapAttribute, NumberAttribute,\
+from pynamodb.attributes import MapAttribute, NumberAttribute,\
     UnicodeAttribute, UTCDateTimeAttribute, BooleanAttribute
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
@@ -40,9 +40,9 @@ class Event(Model):
                     email=person.email,
                     staff=staff
                 ))
-            with Event.batch_write() as event_batch:
+            with EventPeople.batch_write() as event_people_batch:
                 for person_on_event in people_in_event:
-                    event_batch.save(person_on_event)
+                    event_people_batch.save(person_on_event)
                     print('added {0} on event {1}'.format(person_on_event.email, self.event_id))
 
 

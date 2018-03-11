@@ -6,7 +6,7 @@ from dateutil import parser
 import uuid
 
 
-class TestDynamoDBCase(unittest.TestCase):
+class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
     @staticmethod
     def get_random_services():
         service_data = [('piano lesson', 45), ('piano lesson', 60), ('violin lesson', 30)]
@@ -22,9 +22,9 @@ class TestDynamoDBCase(unittest.TestCase):
             day = randint(1, 31)
             yield Event(
                 event_id=str(uuid.uuid4()),
-                service=TestDynamoDBCase.get_random_services(),
+                service=TestDynamoDBCreateTableAndFillCase.get_random_services(),
                 start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
-                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))#,
+                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))
                 )
 
     @staticmethod
@@ -39,7 +39,7 @@ class TestDynamoDBCase(unittest.TestCase):
             )
 
     def setUp(self):
-        super(TestDynamoDBCase, self).setUp()
+        super(TestDynamoDBCreateTableAndFillCase, self).setUp()
         #Person.delete_table()
         #Event.delete_table()
         #EventPeople.delete_table()
@@ -65,15 +65,31 @@ class TestDynamoDBCase(unittest.TestCase):
                     print(event.event_id, event.start_time, event.service.name)
                     e_batch.save(event)
 
-        print('persons=', Person.count(), ', events=', Event.count())
+    def test_table_count(self):
+            self.assertEqual(Person.count(), 100)
+            self.assertEqual(Event.count(), 10)
+
+    def test_add_to_event(self):
+        event_id = ""
+        for event in Event.scan(limit=1):
+            event_id = event.event_id
+            event.add_people(True, *Person.query('person30@gmail.com'))
+        for event_people in EventPeople.email_index.query('person30@gmail.com'):
+            self.assertEqual(event_people.event_id, event_id)
+
+
+class SchemaFieldsTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(SchemaFieldsTestCase, self).setUp()
 
     def test_search_by_email(self):
         for person in Person.query('person30@gmail.com'):
-            print(person)
+            self.assertEqual(person.name, 'Mister Person30')
 
     def test_search_by_name(self):
         for person in Person.name_index.query('Mister Person33'):
-            print(person)
+            self.assertEqual(person.email, 'person33@gmail.com')
 
     def test_add_to_event(self):
         for event in Event.start_index.query(parser.parse("Mar 15 00:00:00 PST 2018")):
@@ -84,6 +100,13 @@ class TestDynamoDBCase(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
-    unittest.main()
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(TestDynamoDBCreateTableAndFillCase())
+    #suite.addTest(SchemaFieldsTestCase())
+    return suite
 
+
+if __name__ == '__main__':
+    runner = unittest.TextTestRunner('test_add_to_event')
+    runner.run(suite())
