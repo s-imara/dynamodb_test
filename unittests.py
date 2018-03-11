@@ -43,6 +43,8 @@ class TestDynamoDBCase(unittest.TestCase):
 
     def setUp(self):
         super(TestDynamoDBCase, self).setUp()
+       # Person.delete_table()
+       # Event.delete_table()
         print('setup table')
         # Create the table
         if not Person.exists():
@@ -67,12 +69,16 @@ class TestDynamoDBCase(unittest.TestCase):
 
     def test_search_email_name(self):
         for item in Person.query('person30@gmail.com'):
-            print(item.staff, item.events[1].service.name)
+            print(item.staff, item.events[1].get('service').get('name'))
             self.assertEqual(item.name, 'Mister Person30')
         for fnd in Person.scan(Person.name == 'Mister Person10'):
             print(fnd.events)
 
-    def test_add_event(self):
+    def test_add_to_event(self):
+        for event in Event.scan(Event.service.name == 'piano lesson'):
+            for person in Person.query('person30@gmail.com'):
+                event.persons.append(person)
+                print(event.id, event.persons)
         pass
 
     def test_search_on_event_date(self):
