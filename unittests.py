@@ -1,5 +1,4 @@
 import unittest
-from pynamodb.connection import TableConnection
 from model import Person, Event, Service
 from random import randint
 from dateutil import parser
@@ -45,22 +44,35 @@ class TestDynamoDBCase(unittest.TestCase):
         if not Person.exists():
             self.table = Person.create_table(wait=True)
         # Save the person
-        with Person.batch_write() as batch:
-            persons = self.create_user_item(100)
-            for person in persons:
-                print(person.name, person.events)
-                batch.save(person)
+        if Person.count() < 100:
+            with Person.batch_write() as batch:
+                persons = self.create_user_item(100)
+                for person in persons:
+                    print(person.name, person.events)
+                    batch.save(person)
         print(Person.count())
 
-    def test_keys(self):
+    def test_search_email_name(self):
+        '''
         print(Person.scan())
         table = TableConnection(Person.Meta.table_name, host=Person.Meta.host)
         item = table.query('andersen3@gmail.com')
         name = list(map(lambda d: d['name'], item.get('Items')))
         print(name)
         emails = table.scan(attributes_to_get='email')['Items']
+        '''
+        for item in Person.query('person30@gmail.com'):
+            print(item.staff, item.events[1].service.name)
+        for fnd in Person.scan(Person.name == 'Mister Person10'):
+            print(fnd.events)
 
+    def test_add_event(self):
+        pass
 
+    def test_search_on_event_date(self):
+        pass
+
+    
 if __name__ == '__main__':
     unittest.main()
 
