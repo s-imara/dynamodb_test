@@ -24,8 +24,8 @@ class TestDynamoDBCase(unittest.TestCase):
                 event_id=str(uuid.uuid4()),
                 service=TestDynamoDBCase.get_random_services(),
                 start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
-                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day)),
-                persons=[]
+                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))#,
+                #persons=[]
                 )
 
     @staticmethod
@@ -37,8 +37,8 @@ class TestDynamoDBCase(unittest.TestCase):
                 staff=True if i % 2 == 0 else False,
                 age=31,
                 phone_number='+380667472123',
-                address='Zaporojie,Verhniaja 11b/26',
-                events=[]
+                address='Zaporojie,Verhniaja 11b/26'#,
+                #events=[]
             )
 
     def setUp(self):
@@ -69,19 +69,21 @@ class TestDynamoDBCase(unittest.TestCase):
 
     def test_search_email_name(self):
         for item in Person.query('person30@gmail.com'):
-            if(len(item.events) >= 2):
-                print(item.staff, item.events[1].get('service').get('name'))
-                self.assertEqual(item.name, 'Mister Person30')
+        #     if(len(item.events) >= 2):
+        #         print(item.staff, item.events[1].get('service').get('name'))
+        #         self.assertEqual(item.name, 'Mister Person30')
+            print(item.name)
         for fnd in Person.scan(Person.name == 'Mister Person10'):
-            print(fnd.events)
+            #print(fnd.events)
+            print(fnd.email)
         for index in Person.name_index.query('Mister Person33'):
             print("Item queried from index: {0}".format(index))
 
     def test_add_to_event(self):
-        for event in Event.scan(Event.service.name == 'piano lesson'):
-            for person in Person.query('person30@gmail.com'):
-                event.persons.append(person)
-                print(event.event_id, event.persons)
+        # for event in Event.scan(Event.service.name == 'piano lesson'):
+        #     for person in Person.query('person30@gmail.com'):
+        #         event.persons.append(person)
+        #         print(event.event_id, event.persons)
         pass
 
     def test_search_on_event_date(self):
