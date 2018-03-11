@@ -22,8 +22,6 @@ class Person(Model):
     email = UnicodeAttribute(hash_key=True)
     name = UnicodeAttribute()
     name_index = PersonNameIndex()
-    #staff = BooleanAttribute(default=False)
     age = NumberAttribute(default=0)
     phone_number = UnicodeAttribute(default="")  # if we want storing more one number use UnicodeSetAttribute()
     address = UnicodeAttribute(default="")
-    #events = ListAttribute()

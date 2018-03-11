@@ -8,6 +8,7 @@ class Service(MapAttribute):
     name = UnicodeAttribute()
     duration = NumberAttribute()
 
+
 class EventStartIndex(GlobalSecondaryIndex):
     class Meta:
         index_name = "event_start_index"
@@ -16,6 +17,7 @@ class EventStartIndex(GlobalSecondaryIndex):
         projection = AllProjection()
     start_time = UTCDateTimeAttribute(hash_key=True)
     event_id = UnicodeAttribute(range_key=True)
+
 
 class Event(Model):
     class Meta:
@@ -27,8 +29,22 @@ class Event(Model):
     service = Service()
     start_time = UTCDateTimeAttribute()
     end_time = UTCDateTimeAttribute()
-    #persons = ListAttribute()
     start_index = EventStartIndex()
+
+    def add_people(self, staff, *persons):
+        people_in_event = list()
+        for person in persons:
+            people_in_event.append(
+                EventPeople(
+                    event_id=self.event_id,
+                    email=person.email,
+                    staff=staff
+                ))
+            with Event.batch_write() as event_batch:
+                for person_on_event in people_in_event:
+                    event_batch.save(person_on_event)
+                    print('added {0} on event {1}'.format(person_on_event.email, self.event_id))
+
 
 class EventPeopleEmailIndex(GlobalSecondaryIndex):
     class Meta:
@@ -38,6 +54,7 @@ class EventPeopleEmailIndex(GlobalSecondaryIndex):
         projection = AllProjection()
     email = UnicodeAttribute(hash_key=True)
     event_id = UnicodeAttribute(range_key=True)
+
 
 class EventPeople(Model):
     class Meta:

@@ -1,6 +1,6 @@
 import unittest
 from person_model import Person
-from event_model import Event, Service
+from event_model import Event, Service, EventPeople
 from random import randint
 from dateutil import parser
 import uuid
@@ -25,38 +25,38 @@ class TestDynamoDBCase(unittest.TestCase):
                 service=TestDynamoDBCase.get_random_services(),
                 start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
                 end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))#,
-                #persons=[]
                 )
 
     @staticmethod
-    def create_user_item(n):
+    def create_person_item(n):
         for i in range(n):
             yield Person(
                 email='person{}@gmail.com'.format(i),
                 name='Mister Person{0}'.format(i),
-                staff=True if i % 2 == 0 else False,
                 age=31,
                 phone_number='+380667472123',
-                address='Zaporojie,Verhniaja 11b/26'#,
-                #events=[]
+                address='Zaporojie,Verhniaja 11b/26'
             )
 
     def setUp(self):
         super(TestDynamoDBCase, self).setUp()
-       # Person.delete_table()
-       # Event.delete_table()
+        #Person.delete_table()
+        #Event.delete_table()
+        #EventPeople.delete_table()
         print('setup table')
         # Create the table
         if not Person.exists():
             Person.create_table(wait=True)
         if not Event.exists():
             Event.create_table(wait=True)
+        if not EventPeople.exists():
+            EventPeople.create_table(wait=True)
         # Save the person
         if Person.count() < 100:
             with Person.batch_write() as p_batch:
-                persons = self.create_user_item(100)
+                persons = self.create_person_item(100)
                 for person in persons:
-                    print(person.name, person.events)
+                    print(person.name)
                     p_batch.save(person)
         if Event.count() < 10:
             with Event.batch_write() as e_batch:
@@ -67,24 +67,18 @@ class TestDynamoDBCase(unittest.TestCase):
 
         print('persons=', Person.count(), ', events=', Event.count())
 
-    def test_search_email_name(self):
-        for item in Person.query('person30@gmail.com'):
-        #     if(len(item.events) >= 2):
-        #         print(item.staff, item.events[1].get('service').get('name'))
-        #         self.assertEqual(item.name, 'Mister Person30')
-            print(item.name)
-        for fnd in Person.scan(Person.name == 'Mister Person10'):
-            #print(fnd.events)
-            print(fnd.email)
-        for index in Person.name_index.query('Mister Person33'):
-            print("Item queried from index: {0}".format(index))
+    def test_search_by_email(self):
+        for person in Person.query('person30@gmail.com'):
+            print(person)
+
+    def test_search_by_name(self):
+        for person in Person.name_index.query('Mister Person33'):
+            print(person)
 
     def test_add_to_event(self):
-        # for event in Event.scan(Event.service.name == 'piano lesson'):
-        #     for person in Person.query('person30@gmail.com'):
-        #         event.persons.append(person)
-        #         print(event.event_id, event.persons)
-        pass
+        for event in Event.start_index.query(parser.parse("Mar 15 00:00:00 PST 2018")):
+            event.add_people(True, *Person.query('person30@gmail.com'))
+            print(event.event_id)
 
     def test_search_on_event_date(self):
         pass
