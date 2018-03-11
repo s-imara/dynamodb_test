@@ -21,7 +21,7 @@ class TestDynamoDBCase(unittest.TestCase):
         for i in range(n):
             day = randint(1, 31)
             yield Event(
-                id=str(uuid.uuid4()),
+                event_id=str(uuid.uuid4()),
                 service=TestDynamoDBCase.get_random_services(),
                 start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
                 end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day)),
@@ -62,7 +62,7 @@ class TestDynamoDBCase(unittest.TestCase):
             with Event.batch_write() as e_batch:
                 events = self.create_list_events(10)
                 for event in events:
-                    print(event.id, event.start_time, event.service.name)
+                    print(event.event_id, event.start_time, event.service.name)
                     e_batch.save(event)
 
         print('persons=', Person.count(), ', events=', Event.count())
