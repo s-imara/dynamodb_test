@@ -76,7 +76,7 @@ class SchemaFieldsTestCase(unittest.TestCase):
         super(SchemaFieldsTestCase, self).setUp()
 
     def test_search_by_email(self):
-        person = Person('person30@gmail.com')
+        person = Person.get('person30@gmail.com')
         self.assertEqual(person.name, 'Mister Person30')
 
     # searches for a a couple of Client based on their name
@@ -91,7 +91,7 @@ class SchemaFieldsTestCase(unittest.TestCase):
         for event in Event.scan(limit=5):
             event.add_people(*Person.query('person30@gmail.com'))
 
-        events = Person('person30@gmail.com').get_events_for_person()
+        events = Person.get('person30@gmail.com').get_events_for_person()
         self.assertEqual(len(events), 5)
 
     def test_search_on_event_date(self):
@@ -102,7 +102,7 @@ class SchemaFieldsTestCase(unittest.TestCase):
         self.assertEqual((Event.count()/2), count)
 
 
-def suite():
+def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(TestDynamoDBCreateTableAndFillCase())
     suite.addTest(SchemaFieldsTestCase())
@@ -111,4 +111,4 @@ def suite():
 
 if __name__ == '__main__':
     runner = unittest.TextTestRunner()
-    runner.run(suite())
+    runner.run(test_suite())

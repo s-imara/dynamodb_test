@@ -38,7 +38,6 @@ class Event(Model):
                 EventPeople(
                     event_id=self.event_id,
                     email=person.email,
-                    staff=person.staff
                 ))
             with EventPeople.batch_write() as event_people_batch:
                 for person_on_event in people_in_event:
@@ -64,6 +63,5 @@ class EventPeople(Model):
         read_capacity_units = 1
     event_id = UnicodeAttribute(hash_key=True)
     email = UnicodeAttribute(range_key=True)
-    staff = BooleanAttribute(default=False)
     email_index = EventPeopleEmailIndex()
 
