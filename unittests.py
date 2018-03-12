@@ -18,13 +18,15 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
 
     @staticmethod
     def create_list_events(n):
+        # For the following tests, you must specify an even number
+        # to generate the same number of suitable and unsuitable results
         for i in range(n):
-            day = range(1, 20, 2)
+            day = randint(1, 5) if i % 2 == 0 else randint(15, 30)
             yield Event(
                 event_id=str(uuid.uuid4()),
                 service=TestDynamoDBCreateTableAndFillCase.get_random_services(),
-                start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day[i])),
-                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day[i]))
+                start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
+                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))
                 )
 
     @staticmethod
@@ -35,7 +37,7 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
                 name='Mister Person{0}'.format(i),
                 age=31,
                 phone_number='+380661234567',
-                address='Ukraine, Kyiv, Grushevskogo, 5'
+                address='Ukraine,Kyiv, v. Grushevskogo, 5'
             )
 
     def setUp(self):
