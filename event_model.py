@@ -20,7 +20,7 @@ class Event(Model):
     start_time = UTCDateTimeAttribute()
     end_time = UTCDateTimeAttribute()
 
-    def add_people(self, *persons):
+    def add_people(self, persons):
         people_in_event = list()
         for person in persons:
             people_in_event.append(
@@ -31,7 +31,6 @@ class Event(Model):
             with EventPeople.batch_write() as event_people_batch:
                 for person_on_event in people_in_event:
                     event_people_batch.save(person_on_event)
-                    print('added {0} on event {1}'.format(person_on_event.email, self.event_id))
 
 
 class EventPeopleEmailIndex(GlobalSecondaryIndex):

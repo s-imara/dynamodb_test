@@ -19,12 +19,12 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
     @staticmethod
     def create_list_events(n):
         for i in range(n):
-            day = randint(1, 5) if i % 2 == 0 else randint(15, 30)
+            day = range(1, 20, 2)
             yield Event(
                 event_id=str(uuid.uuid4()),
                 service=TestDynamoDBCreateTableAndFillCase.get_random_services(),
-                start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day)),
-                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day))
+                start_time=parser.parse("Mar {0} 00:00:00 PST 2018".format(day[i])),
+                end_time=parser.parse("Mar {0} 15:00:00 PST 2018".format(day[i]))
                 )
 
     @staticmethod
@@ -34,8 +34,8 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
                 email='person{}@gmail.com'.format(i),
                 name='Mister Person{0}'.format(i),
                 age=31,
-                phone_number='+380667472123',
-                address='Zaporojie,Verhniaja 11b/26'
+                phone_number='+380661234567',
+                address='Ukraine, Kyiv, Grushevskogo, 5'
             )
 
     def setUp(self):
@@ -72,7 +72,7 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
         with Event.batch_write() as event_batch:
             events = self.create_list_events(10)
             for event in events:
-                print(event.event_id, event.start_time, event.service.name)
+                print('id={0}, event start time={1}, event service name='.format(event.event_id, event.start_time, event.service.name))
                 event_batch.save(event)
 
     def test_table_counts(self):
@@ -99,7 +99,7 @@ class SchemaFieldsTestCase(unittest.TestCase):
 
     def test_search_all_events_for_person(self):
         for event in Event.scan(limit=5):
-            event.add_people(*[Client.get('person30@gmail.com'), Staff.get('person44@gmail.com')])
+            event.add_people([Client.get('person30@gmail.com'), Staff.get('person44@gmail.com')])
 
         events = Client.get('person30@gmail.com').get_events_for_person()
         self.assertEqual(len(events), 5)
