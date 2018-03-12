@@ -76,20 +76,23 @@ class SchemaFieldsTestCase(unittest.TestCase):
         super(SchemaFieldsTestCase, self).setUp()
 
     def test_search_by_email(self):
-        for person in Person.query('person30@gmail.com'):
-            self.assertEqual(person.name, 'Mister Person30')
+        person = Person('person30@gmail.com')
+        self.assertEqual(person.name, 'Mister Person30')
 
+    # searches for a a couple of Client based on their name
     def test_search_by_name(self):
         for person in Person.name_index.query('Mister Person33'):
             self.assertEqual(person.email, 'person33@gmail.com')
+        for person in Person.name_index.query('Mister Person20'):
+            self.assertEqual(person.email, 'person20@gmail.com')
 
-    def test_add_person_to_event(self):
-        event_id = ""
-        for event in Event.scan(limit=1):
-            event_id = event.event_id
+    # show me all the events where Client X is a participant
+    def test_search_all_events_for_person(self):
+        for event in Event.scan(limit=5):
             event.add_people(*Person.query('person30@gmail.com'))
-        for event_people in EventPeople.email_index.query('person30@gmail.com'):
-            self.assertEqual(event_people.event_id, event_id)
+
+        events = Person('person30@gmail.com').get_events_for_person()
+        self.assertEqual(len(events), 5)
 
     def test_search_on_event_date(self):
         count = 0
@@ -107,5 +110,5 @@ def suite():
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner('test_search_on_event_date')
+    runner = unittest.TextTestRunner()
     runner.run(suite())

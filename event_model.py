@@ -66,3 +66,4 @@ class EventPeople(Model):
     email = UnicodeAttribute(range_key=True)
     staff = BooleanAttribute(default=False)
     email_index = EventPeopleEmailIndex()
+
