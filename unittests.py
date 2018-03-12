@@ -19,7 +19,7 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
     @staticmethod
     def create_list_events(n):
         for i in range(n):
-            day = randint(1, 31)
+            day = randint(1, 5) if i % 2 == 0 else randint(15, 30)
             yield Event(
                 event_id=str(uuid.uuid4()),
                 service=TestDynamoDBCreateTableAndFillCase.get_random_services(),
@@ -33,6 +33,7 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
             yield Person(
                 email='person{}@gmail.com'.format(i),
                 name='Mister Person{0}'.format(i),
+                staff=True if i % 2 == 0 else False,
                 age=31,
                 phone_number='+380667472123',
                 address='Zaporojie,Verhniaja 11b/26'
@@ -40,42 +41,33 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
 
     def setUp(self):
         super(TestDynamoDBCreateTableAndFillCase, self).setUp()
-        #Person.delete_table()
-        #Event.delete_table()
-        #EventPeople.delete_table()
-        print('setup table')
-        # Create the table
-        if not Person.exists():
-            Person.create_table(wait=True)
-        if not Event.exists():
-            Event.create_table(wait=True)
-        if not EventPeople.exists():
-            EventPeople.create_table(wait=True)
-        # Save the person
-        if Person.count() < 100:
-            with Person.batch_write() as p_batch:
-                persons = self.create_person_item(100)
-                for person in persons:
-                    print(person.name)
-                    p_batch.save(person)
-        if Event.count() < 10:
-            with Event.batch_write() as e_batch:
-                events = self.create_list_events(10)
-                for event in events:
-                    print(event.event_id, event.start_time, event.service.name)
-                    e_batch.save(event)
+        # Create the tables
+        if Person.exists():
+            Person.delete_table()
+        Person.create_table(wait=True)
+        if Event.exists():
+            Event.delete_table()
+        Event.create_table(wait=True)
+        if EventPeople.exists():
+            EventPeople.delete_table()
+        EventPeople.create_table(wait=True)
 
-    def test_table_count(self):
+        # fill person table
+        with Person.batch_write() as p_batch:
+            persons = self.create_person_item(100)
+            for person in persons:
+                print(person.name)
+                p_batch.save(person)
+        # fill event table
+        with Event.batch_write() as event_batch:
+            events = self.create_list_events(10)
+            for event in events:
+                print(event.event_id, event.start_time, event.service.name)
+                event_batch.save(event)
+
+    def test_table_counts(self):
             self.assertEqual(Person.count(), 100)
             self.assertEqual(Event.count(), 10)
-
-    def test_add_to_event(self):
-        event_id = ""
-        for event in Event.scan(limit=1):
-            event_id = event.event_id
-            event.add_people(True, *Person.query('person30@gmail.com'))
-        for event_people in EventPeople.email_index.query('person30@gmail.com'):
-            self.assertEqual(event_people.event_id, event_id)
 
 
 class SchemaFieldsTestCase(unittest.TestCase):
@@ -91,22 +83,29 @@ class SchemaFieldsTestCase(unittest.TestCase):
         for person in Person.name_index.query('Mister Person33'):
             self.assertEqual(person.email, 'person33@gmail.com')
 
-    def test_add_to_event(self):
-        for event in Event.start_index.query(parser.parse("Mar 15 00:00:00 PST 2018")):
-            event.add_people(True, *Person.query('person30@gmail.com'))
-            print(event.event_id)
+    def test_add_person_to_event(self):
+        event_id = ""
+        for event in Event.scan(limit=1):
+            event_id = event.event_id
+            event.add_people(*Person.query('person30@gmail.com'))
+        for event_people in EventPeople.email_index.query('person30@gmail.com'):
+            self.assertEqual(event_people.event_id, event_id)
 
     def test_search_on_event_date(self):
-        pass
+        count = 0
+        for event in Event.scan(Event.start_time.between(parser.parse("Mar 1 00:00:00 PST 2018"),
+                                                         parser.parse("Mar 10 23:59:00 PST 2018"))):
+            count += 1
+        self.assertEqual((Event.count()/2), count)
 
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestDynamoDBCreateTableAndFillCase())
-    #suite.addTest(SchemaFieldsTestCase())
+    suite.addTest(SchemaFieldsTestCase())
     return suite
 
 
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner('test_add_to_event')
+    runner = unittest.TextTestRunner('test_search_on_event_date')
     runner.run(suite())

@@ -27,18 +27,18 @@ class Event(Model):
         read_capacity_units = 1
     event_id = UnicodeAttribute(hash_key=True)
     service = Service()
-    start_time = UTCDateTimeAttribute()
+    start_time = UTCDateTimeAttribute(range_key=True)
     end_time = UTCDateTimeAttribute()
     start_index = EventStartIndex()
 
-    def add_people(self, staff, *persons):
+    def add_people(self, *persons):
         people_in_event = list()
         for person in persons:
             people_in_event.append(
                 EventPeople(
                     event_id=self.event_id,
                     email=person.email,
-                    staff=staff
+                    staff=person.staff
                 ))
             with EventPeople.batch_write() as event_people_batch:
                 for person_on_event in people_in_event:
