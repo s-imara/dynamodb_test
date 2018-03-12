@@ -1,5 +1,5 @@
 import unittest
-from person_model import Person
+from person_model import Client, Staff, Person
 from event_model import Event, Service, EventPeople
 from random import randint
 from dateutil import parser
@@ -33,7 +33,6 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
             yield Person(
                 email='person{}@gmail.com'.format(i),
                 name='Mister Person{0}'.format(i),
-                staff=True if i % 2 == 0 else False,
                 age=31,
                 phone_number='+380667472123',
                 address='Zaporojie,Verhniaja 11b/26'
@@ -42,9 +41,12 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
     def setUp(self):
         super(TestDynamoDBCreateTableAndFillCase, self).setUp()
         # Create the tables
-        if Person.exists():
-            Person.delete_table()
-        Person.create_table(wait=True)
+        if Client.exists():
+            Client.delete_table()
+        Client.create_table(wait=True)
+        if Staff.exists():
+            Staff.delete_table()
+        Staff.create_table(wait=True)
         if Event.exists():
             Event.delete_table()
         Event.create_table(wait=True)
@@ -52,12 +54,20 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
             EventPeople.delete_table()
         EventPeople.create_table(wait=True)
 
-        # fill person table
-        with Person.batch_write() as p_batch:
-            persons = self.create_person_item(100)
+        # fill client table
+        with Client.batch_write() as p_batch:
+            persons = self.create_person_item(50)
             for person in persons:
-                print(person.name)
+                print('Client name - ', person.name)
                 p_batch.save(person)
+
+        # fill staff table
+        with Staff.batch_write() as p_batch:
+            persons = self.create_person_item(50)
+            for person in persons:
+                print('Staff name - ', person.name)
+                p_batch.save(person)
+
         # fill event table
         with Event.batch_write() as event_batch:
             events = self.create_list_events(10)
@@ -66,7 +76,7 @@ class TestDynamoDBCreateTableAndFillCase(unittest.TestCase):
                 event_batch.save(event)
 
     def test_table_counts(self):
-            self.assertEqual(Person.count(), 100)
+            self.assertEqual(Client.count() + Staff.count(), 100)
             self.assertEqual(Event.count(), 10)
 
 
@@ -76,22 +86,22 @@ class SchemaFieldsTestCase(unittest.TestCase):
         super(SchemaFieldsTestCase, self).setUp()
 
     def test_search_by_email(self):
-        person = Person.get('person30@gmail.com')
-        self.assertEqual(person.name, 'Mister Person30')
+        client = Client.get('person30@gmail.com')
+        self.assertEqual(client.name, 'Mister Person30')
+        staff = Staff.get('person40@gmail.com')
+        self.assertEqual(staff.name, 'Mister Person40')
 
-    # searches for a a couple of Client based on their name
     def test_search_by_name(self):
-        for person in Person.name_index.query('Mister Person33'):
-            self.assertEqual(person.email, 'person33@gmail.com')
-        for person in Person.name_index.query('Mister Person20'):
-            self.assertEqual(person.email, 'person20@gmail.com')
+        for client in Client.name_index.query('Mister Person33'):
+            self.assertEqual(client.email, 'person33@gmail.com')
+        for staff in Staff.name_index.query('Mister Person20'):
+            self.assertEqual(staff.email, 'person20@gmail.com')
 
-    # show me all the events where Client X is a participant
     def test_search_all_events_for_person(self):
         for event in Event.scan(limit=5):
-            event.add_people(*Person.query('person30@gmail.com'))
+            event.add_people(*[Client.get('person30@gmail.com'), Staff.get('person44@gmail.com')])
 
-        events = Person.get('person30@gmail.com').get_events_for_person()
+        events = Client.get('person30@gmail.com').get_events_for_person()
         self.assertEqual(len(events), 5)
 
     def test_search_on_event_date(self):

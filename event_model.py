@@ -1,5 +1,5 @@
 from pynamodb.attributes import MapAttribute, NumberAttribute,\
-    UnicodeAttribute, UTCDateTimeAttribute, BooleanAttribute
+    UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 
@@ -7,16 +7,6 @@ from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 class Service(MapAttribute):
     name = UnicodeAttribute()
     duration = NumberAttribute()
-
-
-class EventStartIndex(GlobalSecondaryIndex):
-    class Meta:
-        index_name = "event_start_index"
-        read_capacity_units = 1
-        write_capacity_units = 1
-        projection = AllProjection()
-    start_time = UTCDateTimeAttribute(hash_key=True)
-    event_id = UnicodeAttribute(range_key=True)
 
 
 class Event(Model):
@@ -27,9 +17,8 @@ class Event(Model):
         read_capacity_units = 1
     event_id = UnicodeAttribute(hash_key=True)
     service = Service()
-    start_time = UTCDateTimeAttribute(range_key=True)
+    start_time = UTCDateTimeAttribute()
     end_time = UTCDateTimeAttribute()
-    start_index = EventStartIndex()
 
     def add_people(self, *persons):
         people_in_event = list()
